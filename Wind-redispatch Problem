@@ -1,0 +1,33 @@
+# Step 1: Importing necessary libraries
+import numpy as np
+import pandas as pd
+
+# Step 2: Reading the input data from CSV file
+df = pd.read_csv('biourja-efzrr-y7i38ed9-input.csv')
+
+# Step 3: Region/Zone and Total State Forecast Data provided in the task
+region_forecast = {'East': 2800, 'North': 1500, 'West': 2000, 'South': 6500}
+total_state_forecast = 12000
+
+# Step 4: Calculating the total capacity of all wind farms
+total_capacity = df['Capacity'].sum()
+
+# Step 5: Calculating individual ratios
+df['Individual_Ratio'] = df['Forecast'] / df['Capacity']
+
+# Step 6: Calculating zonal ratios
+zone_mapping = {'E': 'East', 'N': 'North', 'W': 'West', 'S': 'South'}
+df['Zone'] = df['Plant_Name'].str[0].map(zone_mapping)
+df['Zone_Total_Forecast'] = df['Zone'].map(region_forecast)
+df['Zonal_Ratio'] = df['Zone_Total_Forecast'] / total_state_forecast
+
+# Step 7: Redistributing power based on ratios and constraints
+df['Redistributed_Forecast'] = df.apply(
+    lambda row: min(row['Individual_Ratio'] * row['Capacity'], row['Capacity']) * row['Zonal_Ratio'], axis=1
+)
+
+# Step 8: Rounding the 'Redistributed_Forecast' values to one decimal place
+df['Redistributed_Forecast'] = df['Redistributed_Forecast'].round(1)
+
+# Displaying the redistributed wind farm levels
+print(df[['Plant_Name', 'Redistributed_Forecast']].to_csv(index=False))
